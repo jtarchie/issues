@@ -42,7 +42,8 @@ init token =
 
 decodeLabel : Decode.Decoder String
 decodeLabel =
-  Decode.at ["node", "name"] string
+    Decode.at [ "node", "name" ] string
+
 
 decodeIssue : Decode.Decoder Issue
 decodeIssue =
@@ -51,7 +52,7 @@ decodeIssue =
             |: (field "title" string)
             |: (field "url" string)
             |: (field "number" int)
-            |: (field "labels" (Decode.at ["edges" ] (Decode.list decodeLabel)))
+            |: (field "labels" (Decode.at [ "edges" ] (Decode.list decodeLabel)))
         )
 
 
@@ -105,16 +106,22 @@ listIssues token =
 
 view : List Issue -> Html msg
 view issues =
-    ul [ class "stories" ] (
-      List.map (\i ->
-        li [class "story"]
-          [text i.title
-          ,ul [class "labels"]
-           ( List.map (\l ->
-              li [class "label"] [ text l ]
-            ) i.labels)
-          ]
-      ) issues)
+    ul [ class "stories" ]
+        (List.map
+            (\i ->
+                li [ class "story" ]
+                    [ text i.title
+                    , ul [ class "labels" ]
+                        (List.map
+                            (\l ->
+                                li [ class "label" ] [ text l ]
+                            )
+                            i.labels
+                        )
+                    ]
+            )
+            issues
+        )
 
 
 update : Msg -> List Issue -> ( List Issue, Cmd Msg )
