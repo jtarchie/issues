@@ -23,7 +23,7 @@ type Msg
 main : Program Never (List Issue) Msg
 main =
     Html.program
-        { init = init "token"
+        { init = init "93b6bd6852ee4408642ce3c27f870498974f2d4a"
         , view = view
         , update = update
         , subscriptions = subscriptions

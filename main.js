@@ -9435,7 +9435,7 @@ var _user$project$Main$init = function (token) {
 };
 var _user$project$Main$main = _elm_lang$html$Html$program(
 	{
-		init: _user$project$Main$init('8a5f95355ed0fbc05d24096a091eb1746db3f7f8'),
+		init: _user$project$Main$init('93b6bd6852ee4408642ce3c27f870498974f2d4a'),
 		view: _user$project$Main$view,
 		update: _user$project$Main$update,
 		subscriptions: _user$project$Main$subscriptions
