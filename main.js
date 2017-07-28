@@ -9275,6 +9275,57 @@ var _user$project$Main$update = F2(
 			};
 		}
 	});
+var _user$project$Main$viewMilestone = function (issue) {
+	var _p4 = issue.milestone;
+	if (_p4.ctor === 'Just') {
+		return {
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$li,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$class('label milestone'),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(_p4._0),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		};
+	} else {
+		return {ctor: '[]'};
+	}
+};
+var _user$project$Main$viewLabels = function (issue) {
+	return _elm_lang$core$List$concat(
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$core$List$map,
+				function (l) {
+					return A2(
+						_elm_lang$html$Html$li,
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html_Attributes$class('label'),
+							_1: {ctor: '[]'}
+						},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(l),
+							_1: {ctor: '[]'}
+						});
+				},
+				issue.labels),
+			_1: {
+				ctor: '::',
+				_0: _user$project$Main$viewMilestone(issue),
+				_1: {ctor: '[]'}
+			}
+		});
+};
 var _user$project$Main$view = function (issues) {
 	return A2(
 		_elm_lang$html$Html$ul,
@@ -9305,23 +9356,7 @@ var _user$project$Main$view = function (issues) {
 									_0: _elm_lang$html$Html_Attributes$class('labels'),
 									_1: {ctor: '[]'}
 								},
-								A2(
-									_elm_lang$core$List$map,
-									function (l) {
-										return A2(
-											_elm_lang$html$Html$li,
-											{
-												ctor: '::',
-												_0: _elm_lang$html$Html_Attributes$class('label'),
-												_1: {ctor: '[]'}
-											},
-											{
-												ctor: '::',
-												_0: _elm_lang$html$Html$text(l),
-												_1: {ctor: '[]'}
-											});
-									},
-									i.labels)),
+								_user$project$Main$viewLabels(i)),
 							_1: {ctor: '[]'}
 						}
 					});
@@ -9340,12 +9375,21 @@ var _user$project$Main$decodeLabel = A2(
 		}
 	},
 	_elm_lang$core$Json_Decode$string);
-var _user$project$Main$subscriptions = function (_p4) {
+var _user$project$Main$decodeMilestone = _elm_lang$core$Json_Decode$nullable(
+	A2(
+		_elm_lang$core$Json_Decode$at,
+		{
+			ctor: '::',
+			_0: 'title',
+			_1: {ctor: '[]'}
+		},
+		_elm_lang$core$Json_Decode$string));
+var _user$project$Main$subscriptions = function (_p5) {
 	return _elm_lang$core$Platform_Sub$none;
 };
-var _user$project$Main$Issue = F4(
-	function (a, b, c, d) {
-		return {title: a, url: b, number: c, labels: d};
+var _user$project$Main$Issue = F5(
+	function (a, b, c, d, e) {
+		return {title: a, url: b, number: c, labels: d, milestone: e};
 	});
 var _user$project$Main$decodeIssue = A2(
 	_elm_lang$core$Json_Decode$at,
@@ -9362,21 +9406,24 @@ var _user$project$Main$decodeIssue = A2(
 				_elm_community$json_extra$Json_Decode_Extra_ops['|:'],
 				A2(
 					_elm_community$json_extra$Json_Decode_Extra_ops['|:'],
-					_elm_lang$core$Json_Decode$succeed(_user$project$Main$Issue),
-					A2(_elm_lang$core$Json_Decode$field, 'title', _elm_lang$core$Json_Decode$string)),
-				A2(_elm_lang$core$Json_Decode$field, 'url', _elm_lang$core$Json_Decode$string)),
-			A2(_elm_lang$core$Json_Decode$field, 'number', _elm_lang$core$Json_Decode$int)),
-		A2(
-			_elm_lang$core$Json_Decode$field,
-			'labels',
+					A2(
+						_elm_community$json_extra$Json_Decode_Extra_ops['|:'],
+						_elm_lang$core$Json_Decode$succeed(_user$project$Main$Issue),
+						A2(_elm_lang$core$Json_Decode$field, 'title', _elm_lang$core$Json_Decode$string)),
+					A2(_elm_lang$core$Json_Decode$field, 'url', _elm_lang$core$Json_Decode$string)),
+				A2(_elm_lang$core$Json_Decode$field, 'number', _elm_lang$core$Json_Decode$int)),
 			A2(
-				_elm_lang$core$Json_Decode$at,
-				{
-					ctor: '::',
-					_0: 'edges',
-					_1: {ctor: '[]'}
-				},
-				_elm_lang$core$Json_Decode$list(_user$project$Main$decodeLabel)))));
+				_elm_lang$core$Json_Decode$field,
+				'labels',
+				A2(
+					_elm_lang$core$Json_Decode$at,
+					{
+						ctor: '::',
+						_0: 'edges',
+						_1: {ctor: '[]'}
+					},
+					_elm_lang$core$Json_Decode$list(_user$project$Main$decodeLabel)))),
+		A2(_elm_lang$core$Json_Decode$field, 'milestone', _user$project$Main$decodeMilestone)));
 var _user$project$Main$decodeIssues = A2(
 	_elm_lang$core$Json_Decode$at,
 	{
@@ -9400,7 +9447,7 @@ var _user$project$Main$listIssues = function (token) {
 	var search = A2(
 		_elm_lang$core$Json_Encode$encode,
 		0,
-		_elm_lang$core$Json_Encode$string('{\n            search(first: 10, query: \"user:concourse type:issue\", type: ISSUE) {\n              edges {\n                node {\n                  ... on Issue {\n                    number\n                    title\n                    url\n                    labels(first: 10) {\n                      edges {\n                        node {\n                          name\n                        }\n                      }\n                    }\n                    milestone {\n                      title\n                    }\n                  }\n                }\n              }\n            }\n          }\n      '));
+		_elm_lang$core$Json_Encode$string('{\n            search(first: 100, query: \"user:concourse type:issue\", type: ISSUE) {\n              edges {\n                node {\n                  ... on Issue {\n                    number\n                    title\n                    url\n                    labels(first: 10) {\n                      edges {\n                        node {\n                          name\n                        }\n                      }\n                    }\n                    milestone {\n                      title\n                    }\n                  }\n                }\n              }\n            }\n          }\n      '));
 	var request = _elm_lang$http$Http$request(
 		{
 			method: 'POST',
@@ -9435,7 +9482,7 @@ var _user$project$Main$init = function (token) {
 };
 var _user$project$Main$main = _elm_lang$html$Html$program(
 	{
-		init: _user$project$Main$init('93b6bd6852ee4408642ce3c27f870498974f2d4a'),
+		init: _user$project$Main$init('258bced6db3b1b094930a7346efdaed680c237d2'),
 		view: _user$project$Main$view,
 		update: _user$project$Main$update,
 		subscriptions: _user$project$Main$subscriptions

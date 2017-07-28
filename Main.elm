@@ -13,6 +13,7 @@ type alias Issue =
     , url : String
     , number : Int
     , labels : List String
+    , milestone : Maybe String
     }
 
 
@@ -23,7 +24,7 @@ type Msg
 main : Program Never (List Issue) Msg
 main =
     Html.program
-        { init = init "93b6bd6852ee4408642ce3c27f870498974f2d4a"
+        { init = init "258bced6db3b1b094930a7346efdaed680c237d2"
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -40,6 +41,11 @@ init token =
     ( [], listIssues token )
 
 
+decodeMilestone : Decode.Decoder (Maybe String)
+decodeMilestone =
+    Decode.nullable (Decode.at [ "title" ] string)
+
+
 decodeLabel : Decode.Decoder String
 decodeLabel =
     Decode.at [ "node", "name" ] string
@@ -53,6 +59,7 @@ decodeIssue =
             |: (field "url" string)
             |: (field "number" int)
             |: (field "labels" (Decode.at [ "edges" ] (Decode.list decodeLabel)))
+            |: (field "milestone" decodeMilestone)
         )
 
 
@@ -66,7 +73,7 @@ listIssues token =
     let
         search =
             Json.Encode.encode 0 (Json.Encode.string """{
-            search(first: 10, query: "user:concourse type:issue", type: ISSUE) {
+            search(first: 100, query: "user:concourse type:issue", type: ISSUE) {
               edges {
                 node {
                   ... on Issue {
@@ -104,6 +111,29 @@ listIssues token =
         Http.send ListIssues request
 
 
+viewMilestone : Issue -> List (Html msg)
+viewMilestone issue =
+    case issue.milestone of
+        Just s ->
+            [ li [ class "label milestone" ] [ text s ] ]
+
+        _ ->
+            []
+
+
+viewLabels : Issue -> List (Html msg)
+viewLabels issue =
+    List.concat
+        [ (List.map
+            (\l ->
+                li [ class "label" ] [ text l ]
+            )
+            issue.labels
+          )
+        , viewMilestone issue
+        ]
+
+
 view : List Issue -> Html msg
 view issues =
     ul [ class "stories" ]
@@ -111,13 +141,7 @@ view issues =
             (\i ->
                 li [ class "story" ]
                     [ text i.title
-                    , ul [ class "labels" ]
-                        (List.map
-                            (\l ->
-                                li [ class "label" ] [ text l ]
-                            )
-                            i.labels
-                        )
+                    , ul [ class "labels" ] <| viewLabels i
                     ]
             )
             issues
