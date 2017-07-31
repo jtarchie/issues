@@ -6,6 +6,9 @@ import Http exposing (..)
 import Json.Decode as Decode exposing (Decoder, string, int, succeed, field, maybe)
 import Json.Decode.Extra exposing ((|:))
 import Json.Encode
+import Navigation
+import RouteParser.QueryString as QueryString
+import Dict
 
 
 type alias Issue =
@@ -18,27 +21,37 @@ type alias Issue =
 
 
 type Msg
-    = ListIssues (Result Http.Error (List Issue))
+    = Noop Navigation.Location
+    | ListIssues (Result Http.Error (List Issue))
 
 
 main : Program Never (List Issue) Msg
 main =
-    Html.program
-        { init = init "258bced6db3b1b094930a7346efdaed680c237d2"
+    Navigation.program Noop
+        { init = init
         , view = view
         , update = update
-        , subscriptions = subscriptions
+        , subscriptions = (\_ -> Sub.none)
         }
 
 
-subscriptions : List Issue -> Sub Msg
-subscriptions _ =
-    Sub.none
+init : Navigation.Location -> ( List Issue, Cmd Msg )
+init location =
+    let
+        params =
+            Debug.log "Parsing token" location.search |> QueryString.parse
+    in
+        case Dict.get "token" params of
+            Just tokens ->
+                case tokens of
+                    token :: others ->
+                        ( [], listIssues token )
 
+                    _ ->
+                        ( [], Cmd.none )
 
-init : String -> ( List Issue, Cmd Msg )
-init token =
-    ( [], listIssues token )
+            _ ->
+                ( [], Cmd.none )
 
 
 decodeMilestone : Decode.Decoder (Maybe String)
@@ -151,6 +164,9 @@ view issues =
 update : Msg -> List Issue -> ( List Issue, Cmd Msg )
 update msg models =
     case msg of
+        Noop _ ->
+            ( [], Cmd.none )
+
         ListIssues (Ok issues) ->
             let
                 _ =
