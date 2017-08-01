@@ -16,6 +16,7 @@ type alias Issue =
     , url : String
     , number : Int
     , labels : List String
+    , assignees: List String
     , milestone : Maybe String
     }
 
@@ -64,6 +65,9 @@ decodeLabel : Decode.Decoder String
 decodeLabel =
     Decode.at [ "node", "name" ] string
 
+decodeAssignee : Decode.Decoder String
+decodeAssignee =
+    Decode.at [ "node", "login" ] string
 
 decodeIssue : Decode.Decoder Issue
 decodeIssue =
@@ -73,6 +77,7 @@ decodeIssue =
             |: (field "url" string)
             |: (field "number" int)
             |: (field "labels" (Decode.at [ "edges" ] (Decode.list decodeLabel)))
+            |: (field "assignees" (Decode.at [ "edges" ] (Decode.list decodeAssignee)))
             |: (field "milestone" decodeMilestone)
         )
 
@@ -98,6 +103,13 @@ listIssues token =
                       edges {
                         node {
                           name
+                        }
+                      }
+                    }
+                    assignees(first: 2) {
+                      edges {
+                        node {
+                          login
                         }
                       }
                     }
@@ -162,16 +174,21 @@ viewLabels issue =
         , viewMilestone issue
         ]
 
+viewAssignees : Issue -> List (Html msg)
+viewAssignees issue =
+  if List.isEmpty issue.assignees then
+    []
+  else
+    [ span [ class "assignees" ] [ text <| String.join ", " issue.assignees ] ]
 
 view : List Issue -> Html msg
 view issues =
     ul [ class "stories" ]
         (List.map
-            (\i ->
-                li [ classList [ ("story", True), (storyTypeClass i, True)] ]
-                    [ text i.title
-                    , ul [ class "labels" ] <| viewLabels i
-                    ]
+            (\issue ->
+                li [ classList [ ("story", True), (storyTypeClass issue, True)] ]
+                    <| [ text issue.title ] ++ (viewAssignees issue) ++
+                    [ ul [ class "labels" ] <| viewLabels issue ]
             )
             issues
         )

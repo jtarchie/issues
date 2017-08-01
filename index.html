@@ -40,7 +40,16 @@
         background-repeat: no-repeat;
         background-image: url(//assets.pivotaltracker.com/next/assets/next/ef3f29e8-bug.png);
       }
-
+      .story .assignees {
+        display: inline-block;
+        margin-left: 3px;
+      }
+      .story .assignees:before {
+        content: "("
+      }
+      .story .assignees:after {
+        content: ")"
+      }
       .labels {
         list-style: none;
         padding: 0;
