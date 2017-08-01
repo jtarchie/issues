@@ -23,6 +23,8 @@ type alias Issue =
 
 type alias Query =
     { user : String
+    , labels : List String
+    , milestone : Maybe String
     }
 
 
@@ -47,12 +49,19 @@ type Story
 
 toSearchString : Query -> String
 toSearchString query =
+    String.join " "
+        ([ "user:" ++ query.user
+         , "type:issue"
+         ]
+            ++ List.map (\label -> "label:" ++ label) query.labels
+        )
+
+
+toSearchGHQuery : Query -> String
+toSearchGHQuery query =
     let
         search =
-            String.join " "
-                [ "user:" ++ query.user
-                , "type:issue"
-                ]
+            toSearchString query
     in
         String.join ""
             [ "{search(first: 100, query:\""
@@ -124,7 +133,11 @@ init location =
     let
         model =
             { issues = []
-            , query = { user = "concourse" }
+            , query =
+                { user = "concourse"
+                , labels = []
+                , milestone = Nothing
+                }
             , token = extractToken location
             }
     in
@@ -168,7 +181,7 @@ listIssues : Model -> Cmd Msg
 listIssues model =
     let
         search =
-            Json.Encode.encode 0 (Json.Encode.string <| toSearchString model.query)
+            Json.Encode.encode 0 (Json.Encode.string <| toSearchGHQuery model.query)
 
         request =
             { method = "POST"
