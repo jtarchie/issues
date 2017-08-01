@@ -24,6 +24,7 @@ type Msg
     = Noop Navigation.Location
     | ListIssues (Result Http.Error (List Issue))
 
+type Story = Feature | Bug | Chore | Release
 
 main : Program Never (List Issue) Msg
 main =
@@ -133,6 +134,21 @@ viewMilestone issue =
         _ ->
             []
 
+storyType : Issue -> Story
+storyType issue =
+  if List.member "type: bug" issue.labels then
+    Bug
+  else if List.member "type: chore" issue.labels then
+    Chore
+  else
+    Feature
+
+storyTypeClass : Issue -> String
+storyTypeClass issue =
+  case storyType issue of
+    Bug -> "bug"
+    Chore -> "chore"
+    _ -> "feature"
 
 viewLabels : Issue -> List (Html msg)
 viewLabels issue =
@@ -152,7 +168,7 @@ view issues =
     ul [ class "stories" ]
         (List.map
             (\i ->
-                li [ class "story" ]
+                li [ classList [ ("story", True), (storyTypeClass i, True)] ]
                     [ text i.title
                     , ul [ class "labels" ] <| viewLabels i
                     ]

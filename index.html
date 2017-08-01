@@ -14,13 +14,33 @@
       }
       .stories .story {
         background-color: #f3f3d1;
+        background-position: left center;
         border-bottom: 1px solid #dbdbb0;
         border-top: 1px solid #fff;
         font-size: 12px;
         line-height: 19px;
         min-height: 38px;
-        padding: 3px;
+        padding: 3px 20px 3px;
       }
+      .stories .story:hover {
+        background-color: #f0f0c6;
+      }
+      .story.feature {
+        background-size: 16px 16px;
+        background-repeat: no-repeat;
+        background-image: url(//assets.pivotaltracker.com/next/assets/next/902493c4-feature.png);
+      }
+      .story.chore {
+        background-size: 18px 14px;
+        background-repeat: no-repeat;
+        background-image: url(//assets.pivotaltracker.com/next/assets/next/b0ea4009-chore.png);
+      }
+      .story.bug {
+        background-size: 18px 15px;
+        background-repeat: no-repeat;
+        background-image: url(//assets.pivotaltracker.com/next/assets/next/ef3f29e8-bug.png);
+      }
+
       .labels {
         list-style: none;
         padding: 0;
@@ -36,6 +56,7 @@
       .label.milestone {
         color: #452481;
       }
+
     </style>
     <script type="text/javascript" src="main.min.js"></script>
   </head>
