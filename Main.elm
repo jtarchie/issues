@@ -257,7 +257,7 @@ view model =
         (List.map
             (\issue ->
                 li [ classList [ ( "story", True ), ( storyTypeClass issue, True ) ] ] <|
-                    [ text issue.title ]
+                    [ a [href issue.url, target "_blank" ] [text issue.title] ]
                         ++ (viewAssignees issue)
                         ++ [ ul [ class "labels" ] <| viewLabels issue ]
             )
