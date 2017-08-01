@@ -21,8 +21,20 @@ type alias Issue =
     }
 
 
+type alias Query =
+    { user : String
+    }
+
+
+type alias Model =
+    { issues : List Issue
+    , token : String
+    , query : Query
+    }
+
+
 type Msg
-    = Noop Navigation.Location
+    = Init Navigation.Location
     | ListIssues (Result Http.Error (List Issue))
 
 
@@ -33,9 +45,54 @@ type Story
     | Release
 
 
-main : Program Never (List Issue) Msg
+toSearchString : Query -> String
+toSearchString query =
+    let
+        search =
+            String.join " "
+                [ "user:" ++ query.user
+                , "type:issue"
+                ]
+    in
+        String.join ""
+            [ "{search(first: 100, query:\""
+            , search
+            , """", type: ISSUE) {
+              edges {
+                node {
+                  ... on Issue {
+                    number
+                    title
+                    url
+                    labels(first: 10) {
+                      edges {
+                        node {
+                          name
+                        }
+                      }
+                    }
+                    assignees(first: 2) {
+                      edges {
+                        node {
+                          login
+                        }
+                      }
+                    }
+                    milestone {
+                      title
+                    }
+                  }
+                }
+              }
+            }
+          }
+      """
+            ]
+
+
+main : Program Never Model Msg
 main =
-    Navigation.program Noop
+    Navigation.program Init
         { init = init
         , view = view
         , update = update
@@ -43,23 +100,35 @@ main =
         }
 
 
-init : Navigation.Location -> ( List Issue, Cmd Msg )
-init location =
+extractToken : Navigation.Location -> String
+extractToken location =
     let
         params =
-            Debug.log "Parsing token" location.search |> QueryString.parse
+            QueryString.parse location.search
     in
         case Dict.get "token" params of
             Just tokens ->
                 case tokens of
                     token :: others ->
-                        ( [], listIssues token )
+                        token
 
                     _ ->
-                        ( [], Cmd.none )
+                        ""
 
             _ ->
-                ( [], Cmd.none )
+                ""
+
+
+init : Navigation.Location -> ( Model, Cmd Msg )
+init location =
+    let
+        model =
+            { issues = []
+            , query = { user = "concourse" }
+            , token = extractToken location
+            }
+    in
+        ( model, listIssues model )
 
 
 decodeMilestone : Decode.Decoder (Maybe String)
@@ -95,45 +164,15 @@ decodeIssues =
     Decode.at [ "data", "search", "edges" ] (Decode.list decodeIssue)
 
 
-listIssues : String -> Cmd Msg
-listIssues token =
+listIssues : Model -> Cmd Msg
+listIssues model =
     let
         search =
-            Json.Encode.encode 0 (Json.Encode.string """{
-            search(first: 100, query: "user:concourse type:issue", type: ISSUE) {
-              edges {
-                node {
-                  ... on Issue {
-                    number
-                    title
-                    url
-                    labels(first: 10) {
-                      edges {
-                        node {
-                          name
-                        }
-                      }
-                    }
-                    assignees(first: 2) {
-                      edges {
-                        node {
-                          login
-                        }
-                      }
-                    }
-                    milestone {
-                      title
-                    }
-                  }
-                }
-              }
-            }
-          }
-      """)
+            Json.Encode.encode 0 (Json.Encode.string <| toSearchString model.query)
 
         request =
             { method = "POST"
-            , headers = [ Http.header "Authorization" ("Bearer " ++ token) ]
+            , headers = [ Http.header "Authorization" ("Bearer " ++ model.token) ]
             , url = "https://api.github.com/graphql"
             , body = Http.stringBody "application/json" ("{\"query\":" ++ search ++ "}")
             , expect = expectJson decodeIssues
@@ -199,8 +238,8 @@ viewAssignees issue =
         [ span [ class "assignees" ] [ text <| String.join ", " issue.assignees ] ]
 
 
-view : List Issue -> Html msg
-view issues =
+view : Model -> Html msg
+view model =
     ul [ class "stories" ]
         (List.map
             (\issue ->
@@ -209,26 +248,26 @@ view issues =
                         ++ (viewAssignees issue)
                         ++ [ ul [ class "labels" ] <| viewLabels issue ]
             )
-            issues
+            model.issues
         )
 
 
-update : Msg -> List Issue -> ( List Issue, Cmd Msg )
-update msg models =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case msg of
-        Noop _ ->
-            ( [], Cmd.none )
+        Init _ ->
+            ( model, Cmd.none )
 
         ListIssues (Ok issues) ->
             let
                 _ =
                     Debug.log "OK" (toString issues)
             in
-                ( issues, Cmd.none )
+                ( { model | issues = issues }, Cmd.none )
 
         ListIssues (Err error) ->
             let
                 _ =
                     Debug.log "ERROR" error
             in
-                ( [], Cmd.none )
+                ( model, Cmd.none )
