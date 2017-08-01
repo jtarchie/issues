@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Http exposing (..)
 import Json.Decode as Decode exposing (Decoder, string, int, succeed, field, maybe)
 import Json.Decode.Extra exposing ((|:))
@@ -21,23 +22,18 @@ type alias Issue =
     }
 
 
-type alias Query =
-    { user : String
-    , labels : List String
-    , milestone : Maybe String
-    }
-
-
 type alias Model =
     { issues : List Issue
     , token : String
-    , query : Query
+    , query : String
     }
 
 
 type Msg
     = Init Navigation.Location
     | ListIssues (Result Http.Error (List Issue))
+    | KeyDown Int
+    | UpdateQuery String
 
 
 type Story
@@ -47,26 +43,12 @@ type Story
     | Release
 
 
-toSearchString : Query -> String
-toSearchString query =
-    String.join " "
-        ([ "user:" ++ query.user
-         , "type:issue"
-         ]
-            ++ List.map (\label -> "label:" ++ label) query.labels
-        )
-
-
-toSearchGHQuery : Query -> String
+toSearchGHQuery : String -> String
 toSearchGHQuery query =
-    let
-        search =
-            toSearchString query
-    in
-        String.join ""
-            [ "{search(first: 100, query:\""
-            , search
-            , """", type: ISSUE) {
+    String.join ""
+        [ "{search(first: 100, query:\""
+        , query
+        , """", type: ISSUE) {
               edges {
                 node {
                   ... on Issue {
@@ -96,7 +78,7 @@ toSearchGHQuery query =
             }
           }
       """
-            ]
+        ]
 
 
 main : Program Never Model Msg
@@ -133,11 +115,7 @@ init location =
     let
         model =
             { issues = []
-            , query =
-                { user = "concourse"
-                , labels = []
-                , milestone = Nothing
-                }
+            , query = "user:concourse type:issue"
             , token = extractToken location
             }
     in
@@ -251,23 +229,42 @@ viewAssignees issue =
         [ span [ class "assignees" ] [ text <| String.join ", " issue.assignees ] ]
 
 
-view : Model -> Html msg
+onKeyDown : (Int -> msg) -> Attribute msg
+onKeyDown tagger =
+    on "keydown" (Decode.map tagger keyCode)
+
+
+view : Model -> Html Msg
 view model =
-    ul [ class "stories" ]
-        (List.map
-            (\issue ->
-                li [ classList [ ( "story", True ), ( storyTypeClass issue, True ) ] ] <|
-                    [ a [href issue.url, target "_blank" ] [text issue.title] ]
-                        ++ (viewAssignees issue)
-                        ++ [ ul [ class "labels" ] <| viewLabels issue ]
+    div []
+        [ div [ class "query" ]
+            [ input [ value model.query, autocomplete False, spellcheck False, onKeyDown KeyDown, onInput UpdateQuery ] []
+            ]
+        , ul [ class "stories" ]
+            (List.map
+                (\issue ->
+                    li [ classList [ ( "story", True ), ( storyTypeClass issue, True ) ] ] <|
+                        [ a [ href issue.url, target "_blank" ] [ text issue.title ] ]
+                            ++ (viewAssignees issue)
+                            ++ [ ul [ class "labels" ] <| viewLabels issue ]
+                )
+                model.issues
             )
-            model.issues
-        )
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        KeyDown key ->
+            if key == 13 then
+                ( model, listIssues model )
+            else
+                ( model, Cmd.none )
+
+        UpdateQuery query ->
+            ( { model | query = query }, Cmd.none )
+
         Init _ ->
             ( model, Cmd.none )
 
