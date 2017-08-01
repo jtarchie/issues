@@ -16,7 +16,7 @@ type alias Issue =
     , url : String
     , number : Int
     , labels : List String
-    , assignees: List String
+    , assignees : List String
     , milestone : Maybe String
     }
 
@@ -25,7 +25,13 @@ type Msg
     = Noop Navigation.Location
     | ListIssues (Result Http.Error (List Issue))
 
-type Story = Feature | Bug | Chore | Release
+
+type Story
+    = Feature
+    | Bug
+    | Chore
+    | Release
+
 
 main : Program Never (List Issue) Msg
 main =
@@ -65,9 +71,11 @@ decodeLabel : Decode.Decoder String
 decodeLabel =
     Decode.at [ "node", "name" ] string
 
+
 decodeAssignee : Decode.Decoder String
 decodeAssignee =
     Decode.at [ "node", "login" ] string
+
 
 decodeIssue : Decode.Decoder Issue
 decodeIssue =
@@ -146,21 +154,29 @@ viewMilestone issue =
         _ ->
             []
 
+
 storyType : Issue -> Story
 storyType issue =
-  if List.member "type: bug" issue.labels then
-    Bug
-  else if List.member "type: chore" issue.labels then
-    Chore
-  else
-    Feature
+    if List.member "type: bug" issue.labels then
+        Bug
+    else if List.member "type: chore" issue.labels then
+        Chore
+    else
+        Feature
+
 
 storyTypeClass : Issue -> String
 storyTypeClass issue =
-  case storyType issue of
-    Bug -> "bug"
-    Chore -> "chore"
-    _ -> "feature"
+    case storyType issue of
+        Bug ->
+            "bug"
+
+        Chore ->
+            "chore"
+
+        _ ->
+            "feature"
+
 
 viewLabels : Issue -> List (Html msg)
 viewLabels issue =
@@ -174,21 +190,24 @@ viewLabels issue =
         , viewMilestone issue
         ]
 
+
 viewAssignees : Issue -> List (Html msg)
 viewAssignees issue =
-  if List.isEmpty issue.assignees then
-    []
-  else
-    [ span [ class "assignees" ] [ text <| String.join ", " issue.assignees ] ]
+    if List.isEmpty issue.assignees then
+        []
+    else
+        [ span [ class "assignees" ] [ text <| String.join ", " issue.assignees ] ]
+
 
 view : List Issue -> Html msg
 view issues =
     ul [ class "stories" ]
         (List.map
             (\issue ->
-                li [ classList [ ("story", True), (storyTypeClass issue, True)] ]
-                    <| [ text issue.title ] ++ (viewAssignees issue) ++
-                    [ ul [ class "labels" ] <| viewLabels issue ]
+                li [ classList [ ( "story", True ), ( storyTypeClass issue, True ) ] ] <|
+                    [ text issue.title ]
+                        ++ (viewAssignees issue)
+                        ++ [ ul [ class "labels" ] <| viewLabels issue ]
             )
             issues
         )
