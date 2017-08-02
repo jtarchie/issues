@@ -46,9 +46,9 @@ type Story
 toSearchGHQuery : String -> String
 toSearchGHQuery query =
     String.join ""
-        [ "{search(first: 100, query:\""
-        , query
-        , """", type: ISSUE) {
+        [ "{search(first: 100, query:"
+        , Json.Encode.encode 0 <| Json.Encode.string query
+        , """, type: ISSUE) {
               edges {
                 node {
                   ... on Issue {
