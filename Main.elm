@@ -22,11 +22,18 @@ type alias Issue =
     , milestone : Maybe String
     }
 
+type alias Config = {
+  started: List String,
+  finished: List String,
+  accepted: List String,
+  unstarted: List String
+}
 
 type alias Model =
     { issues : List Issue
     , token : String
     , query : String
+    , config : Config
     }
 
 
@@ -119,6 +126,12 @@ init location =
             { issues = []
             , query = "user:concourse type:issue"
             , token = extractToken location
+            , config = {
+                started = ["workflow: in progress", "workflow: discuss", "workflow: go-around"],
+                finished = ["workflow: completed"],
+                unstarted = [],
+                accepted = []
+              }
             }
     in
         ( model, listIssues model )
@@ -236,22 +249,20 @@ onKeyDown : (Int -> msg) -> Attribute msg
 onKeyDown tagger =
     on "keydown" (Decode.map tagger keyCode)
 
-
 stateClass : Issue -> String
 stateClass issue =
-    if issue.closed then
-        "accepted"
-    else if List.member "workflow: in progress" issue.labels then
-        "started"
-    else if List.member "workflow: discuss" issue.labels then
-        "started"
-    else if List.member "workflow: go-around" issue.labels then
-        "started"
-    else if List.member "workflow: completed" issue.labels then
-        "finished"
-    else
-        "unstarted"
-
+  if issue.closed then
+    "accepted"
+  else if List.member "workflow: in progress" issue.labels then
+    "started"
+  else if List.member "workflow: discuss" issue.labels then
+    "started"
+  else if List.member "workflow: go-around" issue.labels then
+    "started"
+  else if List.member "workflow: completed" issue.labels then
+    "finished"
+  else
+   "unstarted"
 
 view : Model -> Html Msg
 view model =
@@ -262,7 +273,7 @@ view model =
         , ul [ class "stories" ]
             (List.map
                 (\issue ->
-                    li [ classList [ ( "story", True ), ( storyTypeClass issue, True ), ( stateClass issue, True ) ] ] <|
+                    li [ classList [ ( "story", True ), ( storyTypeClass issue, True ), (stateClass issue, True) ] ] <|
                         [ a [ href issue.url, target "_blank" ] [ text issue.title ] ]
                             ++ (viewAssignees issue)
                             ++ [ ul [ class "labels" ] <| viewLabels issue ]
