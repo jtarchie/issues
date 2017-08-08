@@ -13,9 +13,9 @@ a:hover {
   padding: 0 10px 0 10px;
 }
 .stories .story {
-  background-color: #f3f3d1;
+  background-color: #f4f4f4;
   background-position: left 3px top 3px;
-  border-bottom: 1px solid #dbdbb0;
+  border-bottom: 1px solid #ddd;
   border-top: 1px solid #fff;
   font-size: 12px;
   line-height: 19px;
@@ -23,7 +23,7 @@ a:hover {
   padding: 3px 23px 3px;
 }
 .stories .story:hover {
-  background-color: #f0f0c6;
+  background-color: #e6e6e6;
 }
 .story.feature {
   background-size: 16px 16px;
@@ -50,6 +50,46 @@ a:hover {
 .story .assignees:after {
   content: ")"
 }
+
+.story.unstarted:before {
+  background-color: #e0e2e5;
+  border-color: #c8cbd0;
+  border-radius: 3px;
+  border: 1px solid #fff;
+  color: #111;
+  content: "Start";
+  cursor: pointer;
+  display: inline-block;
+  float: right;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  margin: 0 0 0 2px;
+  padding-top: 0;
+  text-align: center;
+  text-decoration: none;
+  width: 47px;
+}
+
+.story.started:before {
+  background-color: #203e64;
+  border-color: #172c51;
+  border-radius: 3px;
+  border: 1px solid #fff;
+  color: #eee;
+  content: "Finish";
+  cursor: pointer;
+  float: right;
+  font-weight: 600;
+  line-height: 20px;
+  margin: 0 0 0 2px;
+  padding-top: 0;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  width: 47px;
+}
+
 .labels {
   list-style: none;
   padding: 0;

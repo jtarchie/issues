@@ -4,7 +4,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http exposing (..)
-import Json.Decode as Decode exposing (Decoder, string, int, succeed, field, maybe)
+import Json.Decode as Decode exposing (Decoder, string, int, succeed, field, maybe, bool)
 import Json.Decode.Extra exposing ((|:))
 import Json.Encode
 import Navigation
@@ -16,6 +16,7 @@ type alias Issue =
     { title : String
     , url : String
     , number : Int
+    , closed : Bool
     , labels : List String
     , assignees : List String
     , milestone : Maybe String
@@ -55,6 +56,7 @@ toSearchGHQuery query =
                     number
                     title
                     url
+                    closed
                     labels(first: 10) {
                       edges {
                         node {
@@ -144,6 +146,7 @@ decodeIssue =
             |: (field "title" string)
             |: (field "url" string)
             |: (field "number" int)
+            |: (field "closed" bool)
             |: (field "labels" (Decode.at [ "edges" ] (Decode.list decodeLabel)))
             |: (field "assignees" (Decode.at [ "edges" ] (Decode.list decodeAssignee)))
             |: (field "milestone" decodeMilestone)
@@ -234,6 +237,22 @@ onKeyDown tagger =
     on "keydown" (Decode.map tagger keyCode)
 
 
+stateClass : Issue -> String
+stateClass issue =
+    if issue.closed then
+        "accepted"
+    else if List.member "workflow: in progress" issue.labels then
+        "started"
+    else if List.member "workflow: discuss" issue.labels then
+        "started"
+    else if List.member "workflow: go-around" issue.labels then
+        "started"
+    else if List.member "workflow: completed" issue.labels then
+        "finished"
+    else
+        "unstarted"
+
+
 view : Model -> Html Msg
 view model =
     div []
@@ -243,7 +262,7 @@ view model =
         , ul [ class "stories" ]
             (List.map
                 (\issue ->
-                    li [ classList [ ( "story", True ), ( storyTypeClass issue, True ) ] ] <|
+                    li [ classList [ ( "story", True ), ( storyTypeClass issue, True ), ( stateClass issue, True ) ] ] <|
                         [ a [ href issue.url, target "_blank" ] [ text issue.title ] ]
                             ++ (viewAssignees issue)
                             ++ [ ul [ class "labels" ] <| viewLabels issue ]
