@@ -51,11 +51,53 @@ a:hover {
   content: ")"
 }
 
+.story.finished:before {
+  background-color: #629200;
+  border-color: #4e8200;
+  border-radius: 3px;
+  border: 1px solid;
+  color: #eee;
+  content: "Accept";
+  cursor: pointer;
+  display: inline-block;
+  float: left;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  margin: 0 0 0 2px;
+  padding-top: 0;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  width: 47px;
+}
+
+.story.finished:before {
+  background-color: #a71f39;
+  border-color: #950828;
+  border-radius: 3px;
+  border: 1px solid;
+  color: #eee;
+  content: "Reject";
+  cursor: pointer;
+  display: inline-block;
+  float: right;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 20px;
+  margin: 0 0 0 2px;
+  padding-top: 0;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  width: 47px;
+}
+
 .story.unstarted:before {
   background-color: #e0e2e5;
   border-color: #c8cbd0;
   border-radius: 3px;
-  border: 1px solid #fff;
+  border: 1px solid;
   color: #111;
   content: "Start";
   cursor: pointer;
@@ -75,7 +117,7 @@ a:hover {
   background-color: #203e64;
   border-color: #172c51;
   border-radius: 3px;
-  border: 1px solid #fff;
+  border: 1px solid;
   color: #eee;
   content: "Finish";
   cursor: pointer;

@@ -22,18 +22,11 @@ type alias Issue =
     , milestone : Maybe String
     }
 
-type alias Config = {
-  started: List String,
-  finished: List String,
-  accepted: List String,
-  unstarted: List String
-}
-
 type alias Model =
     { issues : List Issue
     , token : String
     , query : String
-    , config : Config
+    , config : Dict.Dict String (List String)
     }
 
 
@@ -100,23 +93,23 @@ main =
         }
 
 
-extractToken : Navigation.Location -> String
-extractToken location =
+extractParam : (Navigation.Location, String, String) -> String
+extractParam (location, name, default) =
     let
         params =
             QueryString.parse location.search
     in
-        case Dict.get "token" params of
+        case Dict.get name params of
             Just tokens ->
                 case tokens of
                     token :: others ->
-                        token
+                        Maybe.withDefault default (Http.decodeUri token)
 
                     _ ->
-                        ""
+                        default
 
             _ ->
-                ""
+                default
 
 
 init : Navigation.Location -> ( Model, Cmd Msg )
@@ -124,14 +117,12 @@ init location =
     let
         model =
             { issues = []
-            , query = "user:concourse type:issue"
-            , token = extractToken location
-            , config = {
-                started = ["workflow: in progress", "workflow: discuss", "workflow: go-around"],
-                finished = ["workflow: completed"],
-                unstarted = [],
-                accepted = []
-              }
+            , query = extractParam (location, "query", "user:concourse type:issue")
+            , token = extractParam (location, "token", "")
+            , config = Dict.fromList [
+                  ("started", ["workflow: in progress", "workflow: discuss", "workflow: go-around"]),
+                  ("finished", ["workflow: completed"])
+                ]
             }
     in
         ( model, listIssues model )
@@ -249,20 +240,21 @@ onKeyDown : (Int -> msg) -> Attribute msg
 onKeyDown tagger =
     on "keydown" (Decode.map tagger keyCode)
 
-stateClass : Issue -> String
-stateClass issue =
+stateClass : Dict.Dict String (List String) ->  Issue -> String
+stateClass config issue =
   if issue.closed then
     "accepted"
-  else if List.member "workflow: in progress" issue.labels then
-    "started"
-  else if List.member "workflow: discuss" issue.labels then
-    "started"
-  else if List.member "workflow: go-around" issue.labels then
-    "started"
-  else if List.member "workflow: completed" issue.labels then
-    "finished"
   else
-   "unstarted"
+    let
+        possible = List.filter (\(state,labels) ->
+          List.any (\label ->
+            List.member label issue.labels
+          ) labels
+        ) <| Dict.toList config
+    in
+        case possible of
+          (x, _) :: xs -> x
+          [] -> "unstarted"
 
 view : Model -> Html Msg
 view model =
@@ -273,7 +265,7 @@ view model =
         , ul [ class "stories" ]
             (List.map
                 (\issue ->
-                    li [ classList [ ( "story", True ), ( storyTypeClass issue, True ), (stateClass issue, True) ] ] <|
+                    li [ classList [ ( "story", True ), ( storyTypeClass issue, True ), ((stateClass model.config issue), True) ] ] <|
                         [ a [ href issue.url, target "_blank" ] [ text issue.title ] ]
                             ++ (viewAssignees issue)
                             ++ [ ul [ class "labels" ] <| viewLabels issue ]
